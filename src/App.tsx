@@ -10,12 +10,39 @@ function App() {
   const editorRef = useRef<EditorJS>();
   const editorHolder = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
+  const [htmlOutput, setHtmlOutput] = useState<string>('');
+
+  const convertToHtml = (blocks: any[]) => {
+    return blocks.map(block => {
+      switch (block.type) {
+        case 'header':
+          return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
+        case 'paragraph':
+          return `<p>${block.data.text}</p>`;
+        case 'list':
+          {
+            const listItems = block.data.items
+              .map((item: string) => `<li>${item}</li>`)
+              .join('');
+            return block.data.style === 'ordered'
+              ? `<ol>${listItems}</ol>`
+              : `<ul>${listItems}</ul>`;
+          }
+        default:
+          return '';
+      }
+    }).join('');
+  };
+
 
   const handleSave = async () => {
     if (editorRef.current && isReady) {
       try {
         const savedData = await editorRef.current.save();
         console.log('Saved data:', savedData);
+        const html = convertToHtml(savedData.blocks);
+        setHtmlOutput(html);
+        console.log('HTML Output:', html);
         return savedData;
       } catch (error) {
         console.error('Saving failed:', error);
@@ -84,6 +111,20 @@ function App() {
           padding: '10px',
         }}
       ></div>
+      <div
+        style={{
+          marginTop: '20px',
+          padding: '10px',
+          border: '1px solid #ddd',
+          borderRadius: '5px'
+        }}
+      >
+        <h3>HTML Output:</h3>
+        <div dangerouslySetInnerHTML={{ __html: htmlOutput }}></div>
+        <pre style={{ background: '#f5f5f5', padding: '10px' }}>
+          {htmlOutput}
+        </pre>
+      </div>
     </div>
   );
 }

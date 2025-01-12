@@ -1,6 +1,7 @@
 import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
 import List from '@editorjs/list';
+import _ from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import reactLogo from './assets/react.svg';
@@ -85,6 +86,12 @@ function App() {
 
 
   const handleSave = async () => {
+    console.log('Saving...');
+    console.log('editorRef.current', editorRef.current);
+    console.log('isReady', isReady);
+
+
+
     if (editorRef.current && isReady) {
       try {
         const savedData = await editorRef.current.save();
@@ -99,6 +106,10 @@ function App() {
     }
   };
 
+  const debouncedSave = _.debounce(() => {
+    handleSave();
+  }, 200);
+
   useEffect(() => {
     if (!editorHolder.current) return;
 
@@ -110,6 +121,7 @@ function App() {
       },
       onChange: (api) => {
         console.log('Content changed');
+        debouncedSave();
       },
       data: {
         blocks: blocks,

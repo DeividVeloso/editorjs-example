@@ -6,33 +6,82 @@ import './App.css';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 
+const convertHtmlToBlocks = (html: string) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const blocks: any[] = [];
+
+  doc.body.childNodes.forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      switch (element.tagName.toLowerCase()) {
+        case 'p':
+          blocks.push({
+            type: 'paragraph',
+            data: { text: element.innerHTML }
+          });
+          break;
+        case 'h1':
+        case 'h2':
+        case 'h3':
+        case 'h4':
+        case 'h5':
+        case 'h6':
+          blocks.push({
+            type: 'header',
+            data: {
+              text: element.innerHTML,
+              level: parseInt(element.tagName.charAt(1))
+            }
+          });
+          break;
+        case 'ul':
+        case 'ol':
+          blocks.push({
+            type: 'list',
+            data: {
+              style: element.tagName.toLowerCase() === 'ol' ? 'ordered' : 'unordered',
+              items: Array.from(element.children).map(li => li.innerHTML)
+            }
+          });
+          break;
+      }
+    }
+  });
+  return blocks;
+};
+
+const convertToHtml = (blocks: any[]) => {
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'header':
+        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
+      case 'paragraph':
+        return `<p>${block.data.text}</p>`;
+      case 'list':
+        {
+          const listItems = block.data.items
+            .map((item: string) => `<li>${item}</li>`)
+            .join('');
+          return block.data.style === 'ordered'
+            ? `<ol>${listItems}</ol>`
+            : `<ul>${listItems}</ul>`;
+        }
+      default:
+        return '';
+    }
+  }).join('');
+};
+
+const htmlFromApi = '<p>asdfasdf</p><p>asfasdf</p><p>asdfasdfasdf</p><h2>asdfasdf</h2>';
+const blocks = convertHtmlToBlocks(htmlFromApi);
+console.log('Blocks===>:', blocks);
+
 function App() {
   const editorRef = useRef<EditorJS>();
   const editorHolder = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
   const [htmlOutput, setHtmlOutput] = useState<string>('');
-
-  const convertToHtml = (blocks: any[]) => {
-    return blocks.map(block => {
-      switch (block.type) {
-        case 'header':
-          return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
-        case 'paragraph':
-          return `<p>${block.data.text}</p>`;
-        case 'list':
-          {
-            const listItems = block.data.items
-              .map((item: string) => `<li>${item}</li>`)
-              .join('');
-            return block.data.style === 'ordered'
-              ? `<ol>${listItems}</ol>`
-              : `<ul>${listItems}</ul>`;
-          }
-        default:
-          return '';
-      }
-    }).join('');
-  };
 
 
   const handleSave = async () => {
@@ -63,15 +112,7 @@ function App() {
         console.log('Content changed');
       },
       data: {
-        time: new Date().getTime(),
-        blocks: [
-          {
-            type: "paragraph",
-            data: {
-              text: "Start writing here..."
-            }
-          }
-        ]
+        blocks: blocks,
       },
       onReady: () => {
         editorRef.current = editor;
@@ -79,12 +120,14 @@ function App() {
       }
     });
 
+    // function addBlocks(blocks) { for (const i of blocks) { editor.blocks.insert(i) } }
     // Cleanup function
     return () => {
       editor.isReady
         .then(() => {
           editor.destroy();
           editorRef.current = undefined;
+
         })
         .catch(e => console.error('ERROR editor cleanup', e));
     };

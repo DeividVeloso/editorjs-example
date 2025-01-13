@@ -1,49 +1,52 @@
-import EditorJS from '@editorjs/editorjs';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import _ from 'lodash';
-import { useEffect, useRef, useState } from 'react';
-import './App.css';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+import EditorJS from "@editorjs/editorjs";
+import Header from "@editorjs/header";
+import List from "@editorjs/list";
+import _ from "lodash";
+import { useEffect, useRef, useState } from "react";
+import "./App.css";
+import reactLogo from "./assets/react.svg";
+import viteLogo from "/vite.svg";
 
 const convertHtmlToBlocks = (html: string) => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(html, "text/html");
   const blocks: any[] = [];
 
   doc.body.childNodes.forEach((node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
       switch (element.tagName.toLowerCase()) {
-        case 'p':
+        case "p":
           blocks.push({
-            type: 'paragraph',
-            data: { text: element.innerHTML }
+            type: "paragraph",
+            data: { text: element.innerHTML },
           });
           break;
-        case 'h1':
-        case 'h2':
-        case 'h3':
-        case 'h4':
-        case 'h5':
-        case 'h6':
+        case "h1":
+        case "h2":
+        case "h3":
+        case "h4":
+        case "h5":
+        case "h6":
           blocks.push({
-            type: 'header',
+            type: "header",
             data: {
               text: element.innerHTML,
-              level: parseInt(element.tagName.charAt(1))
-            }
+              level: parseInt(element.tagName.charAt(1)),
+            },
           });
           break;
-        case 'ul':
-        case 'ol':
+        case "ul":
+        case "ol":
           blocks.push({
-            type: 'list',
+            type: "list",
             data: {
-              style: element.tagName.toLowerCase() === 'ol' ? 'ordered' : 'unordered',
-              items: Array.from(element.children).map(li => li.innerHTML)
-            }
+              style:
+                element.tagName.toLowerCase() === "ol"
+                  ? "ordered"
+                  : "unordered",
+              items: Array.from(element.children).map((li) => li.innerHTML),
+            },
           });
           break;
       }
@@ -53,55 +56,54 @@ const convertHtmlToBlocks = (html: string) => {
 };
 
 const convertToHtml = (blocks: any[]) => {
-  return blocks.map(block => {
-    switch (block.type) {
-      case 'header':
-        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
-      case 'paragraph':
-        return `<p>${block.data.text}</p>`;
-      case 'list':
-        {
+  return blocks
+    .map((block) => {
+      switch (block.type) {
+        case "header":
+          return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
+        case "paragraph":
+          return `<p>${block.data.text}</p>`;
+        case "list": {
           const listItems = block.data.items
             .map((item: string) => `<li>${item}</li>`)
-            .join('');
-          return block.data.style === 'ordered'
+            .join("");
+          return block.data.style === "ordered"
             ? `<ol>${listItems}</ol>`
             : `<ul>${listItems}</ul>`;
         }
-      default:
-        return '';
-    }
-  }).join('');
+        default:
+          return "";
+      }
+    })
+    .join("");
 };
 
-const htmlFromApi = '<p>asdfasdf</p><p>asfasdf</p><p>asdfasdfasdf</p><h2>asdfasdf</h2>';
+const htmlFromApi =
+  "<p>asdfasdf</p><p>asfasdf</p><p>asdfasdfasdf</p><h2>asdfasdf</h2>";
 const blocks = convertHtmlToBlocks(htmlFromApi);
-console.log('Blocks===>:', blocks);
+console.log("Blocks===>:", blocks);
 
 function App() {
   const editorRef = useRef<EditorJS>();
   const editorHolder = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
-  const [htmlOutput, setHtmlOutput] = useState<string>('');
-
+  const [htmlOutput, setHtmlOutput] = useState<string>("");
 
   const handleSave = async () => {
-    console.log('Saving...');
-    console.log('editorRef.current', editorRef.current);
-    console.log('isReady', isReady);
-
-
+    console.log("Saving...");
+    console.log("editorRef.current", editorRef.current);
+    console.log("isReady", isReady);
 
     if (editorRef.current && isReady) {
       try {
         const savedData = await editorRef.current.save();
-        console.log('Saved data:', savedData);
+        console.log("Saved data:", savedData);
         const html = convertToHtml(savedData.blocks);
         setHtmlOutput(html);
-        console.log('HTML Output:', html);
+        console.log("HTML Output:", html);
         return savedData;
       } catch (error) {
-        console.error('Saving failed:', error);
+        console.error("Saving failed:", error);
       }
     }
   };
@@ -117,10 +119,10 @@ function App() {
       holder: editorHolder.current,
       tools: {
         header: Header,
-        list: List
+        list: List,
       },
-      onChange: (api) => {
-        console.log('Content changed');
+      onChange: () => {
+        console.log("Content changed");
         debouncedSave();
       },
       data: {
@@ -129,7 +131,7 @@ function App() {
       onReady: () => {
         editorRef.current = editor;
         setIsReady(true);
-      }
+      },
     });
 
     // function addBlocks(blocks) { for (const i of blocks) { editor.blocks.insert(i) } }
@@ -139,9 +141,8 @@ function App() {
         .then(() => {
           editor.destroy();
           editorRef.current = undefined;
-
         })
-        .catch(e => console.error('ERROR editor cleanup', e));
+        .catch((e) => console.error("ERROR editor cleanup", e));
     };
   }, []);
 
@@ -156,27 +157,29 @@ function App() {
         </a>
       </div>
       <h1>Editor.js with React</h1>
-      <button onClick={handleSave} disabled={!isReady}>Save</button>
+      <button onClick={handleSave} disabled={!isReady}>
+        Save
+      </button>
       <div
         ref={editorHolder}
         style={{
-          border: '1px solid #ddd',
-          borderRadius: '5px',
-          minHeight: '300px',
-          padding: '10px',
+          border: "1px solid #ddd",
+          borderRadius: "5px",
+          minHeight: "300px",
+          padding: "10px",
         }}
       ></div>
       <div
         style={{
-          marginTop: '20px',
-          padding: '10px',
-          border: '1px solid #ddd',
-          borderRadius: '5px'
+          marginTop: "20px",
+          padding: "10px",
+          border: "1px solid #ddd",
+          borderRadius: "5px",
         }}
       >
         <h3>HTML Output:</h3>
         <div dangerouslySetInnerHTML={{ __html: htmlOutput }}></div>
-        <pre style={{ background: '#f5f5f5', padding: '10px' }}>
+        <pre style={{ background: "#f5f5f5", padding: "10px" }}>
           {htmlOutput}
         </pre>
       </div>
